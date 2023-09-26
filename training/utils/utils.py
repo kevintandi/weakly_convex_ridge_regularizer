@@ -6,9 +6,10 @@ import torch
 import matplotlib.pyplot as plt
 sys.path.append('../')
 from models.wc_conv_net import WCvxConvNet
+from models.wc_conv_net_3d import WCvxConvNet3d
 from pathlib import Path
 
-def load_model(name, device='cuda:0', epoch=None):
+def load_model(name, device='cuda:0', epoch=None, dims=2):
     # folder
     current_directory = Path(os.path.dirname(os.path.abspath(__file__))).parent.parent.absolute()
     directory = f'{current_directory}/trained_models/{name}/'
@@ -31,7 +32,7 @@ def load_model(name, device='cuda:0', epoch=None):
    
     # build model
 
-    model, _ = build_model(config)
+    model, _ = build_model(config, dims=dims)
 
     checkpoint = torch.load(checkpoint_path, map_location={'cuda:0':device,'cuda:1':device,'cuda:2':device,'cuda:3':device})
 
@@ -45,7 +46,7 @@ def load_model(name, device='cuda:0', epoch=None):
 
     return(model)
 
-def build_model(config):
+def build_model(config, dims=2):
     # ensure consistency of the config file, e.g. number of channels, ranges + enforce constraints
 
     # 1- Activation function (learnable spline)
@@ -71,8 +72,12 @@ def build_model(config):
     param_spline_scaling["x_max"] = config['noise_range'][1]
     param_spline_scaling["num_activations"] = config['multi_convolution']['num_channels'][-1]
 
-
-    model = WCvxConvNet(param_multi_conv=param_multi_conv, param_spline_activation=param_spline_activation, param_spline_scaling=param_spline_scaling, rho_wcvx=config['rho_wcvx'])
+    if dims == 2:
+        model = WCvxConvNet(param_multi_conv=param_multi_conv, param_spline_activation=param_spline_activation, param_spline_scaling=param_spline_scaling, rho_wcvx=config["rho_wcvx"])
+    elif dims == 3:
+        model = WCvxConvNet3d(param_multi_conv=param_multi_conv, param_spline_activation=param_spline_activation, param_spline_scaling=param_spline_scaling, rho_wcvx=config["rho_wcvx"])
+    else:
+        raise ValueError("Number of dimensions not valid.")
 
 
     return(model, config)

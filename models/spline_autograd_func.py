@@ -26,7 +26,8 @@ class LinearSpline_Func(torch.autograd.Function):
 
         # This gives the indexes (in coefficients_vect) of the left
         # coefficients
-        indexes = (zero_knot_indexes.view(1, -1, 1, 1, 1) + floored_x).long()
+        indexes = (zero_knot_indexes.view([1, -1] + ( len(x.shape) - 2 ) * [1]) + floored_x).long()
+
 
         coefficients_vect = coefficients.view(-1)
 
@@ -140,7 +141,7 @@ class Quadratic_Spline_Func(torch.autograd.Function):
 
         # This gives the indexes (in coefficients_vect) of the left
         # coefficients
-        indexes = (zero_knot_indexes.view(1, -1, 1, 1, 1) + floored_x).long()
+        indexes = (zero_knot_indexes.view([1, -1] + ( len(x.shape) - 2) * [1]) + floored_x).long()
 
         # B-Splines evaluation
         shift1 = (x - x_min) / step_size - floored_x

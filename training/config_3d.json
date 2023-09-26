@@ -1,5 +1,5 @@
 {
-    "exp_name": "WCRR-CNN",
+    "exp_name": "3D_WCRR-CNN_maxiter150",
     "logging_info": {
         "log_batch": 500,
         "log_dir": "../trained_models/test/"
@@ -18,33 +18,33 @@
         ]
     },
     "noise_range": [
-        0,
-        30
+        24.99,
+        25.01
     ],
     "rho_wcvx": 1,
     "noise_val": 25,
     "optimization": {
         "lr": {
-            "conv": 0.005,
-            "spline_activation": 5e-05,
-            "mu": 0.05,
-            "spline_scaling": 0.005
+            "conv": 0.001,
+            "spline_activation": 1e-05,
+            "mu": 0.01,
+            "spline_scaling": 0.001
         }
         
     },
     "spline_activation": {
         "num_knots": 1001,
-        "x_max": 0.1,
-        "x_min": -0.1
+        "x_max": 1,
+        "x_min": -1
     },
     "spline_scaling": {
-        "init": 6.0,
+        "init": 4.0,
         "num_knots": 11
     },
     "train_dataloader": {
-        "batch_size": 128,
+        "batch_size": 1,
         "num_workers": 1,
-        "train_data_file": "data/preprocessed/BSD/train.h5"
+        "train_data_file": "data/preprocessed_3d/train.h5"
     },
     "training_options": {
         "fixed_point_solver_bw_params": {
@@ -52,7 +52,7 @@
             "tol": 0.001
         },
         "fixed_point_solver_fw_params": {
-            "max_iter": 200,
+            "max_iter": 150,
             "tol": 0.0001
         },
         "n_batches": 6000,
@@ -66,6 +66,6 @@
     "val_dataloader": {
         "batch_size": 1,
         "num_workers": 1,
-        "val_data_file": "data/preprocessed/BSD/validation.h5"
+        "val_data_file": "data/preprocessed_3d/train.h5"
     }
 }

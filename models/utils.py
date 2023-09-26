@@ -12,10 +12,11 @@ def accelerated_gd_batch(x_noisy, model, sigma=None, ada_restart=False, stop_con
     max_iter = kwargs.get('max_iter', 500)
     tol = kwargs.get('tol', 1e-4)
 
+    shape = x_noisy.shape
     # initial value: noisy image
     x = torch.clone(x_noisy)
     z = torch.clone(x_noisy)
-    t = torch.ones(x.shape[0], device=x.device).view(-1,1,1,1)
+    t = torch.ones(x.shape[0], device=x.device).view([-1] + ( len(shape) - 1) * [1])
 
     # cache values of scaling coeff for efficiency
     scaling = model.get_scaling(sigma=sigma)
@@ -50,12 +51,12 @@ def accelerated_gd_batch(x_noisy, model, sigma=None, ada_restart=False, stop_con
         z[idx] = x[idx] + (t_old[idx] - 1)/t[idx] * (x[idx] - x_old[idx])
 
         if i > 0:
-            res[idx] = torch.norm(x[idx] - x_old[idx], p=2, dim=(1,2,3)) / (torch.norm(x[idx], p=2, dim=(1,2,3)))
+            res[idx] = torch.norm(x[idx] - x_old[idx], p=2, dim=list(range(1, len(shape)))) / (torch.norm(x[idx], p=2, dim=list(range(1, len(shape)))))
 
        
 
         if ada_restart:
-            esti = torch.sum(grad*(x[idx] - x_old[idx]), dim=(1,2,3))
+            esti = torch.sum(grad*(x[idx] - x_old[idx]), dim=list(range(1, len(shape))))
             id_restart = (esti > 0).nonzero().view(-1)
             t[idx[id_restart]] = 1
             z[idx[id_restart]] = x[idx[id_restart]]
@@ -158,10 +159,11 @@ def accelerated_gd_single(x_noisy, model, sigma=None, ada_restart=False, stop_co
 import sys
 sys.path.append('../')
 from models.wc_conv_net import WCvxConvNet
+from models.wc_conv_net_3d import WCvxConvNet3d
 from pathlib import Path
 import json
 
-def load_model(name, device='cuda:0', epoch=None):
+def load_model(name, device='cuda:0', epoch=None, dims=2):
     # folder
     current_directory = Path(os.path.dirname(os.path.abspath(__file__))).parent.absolute()
     directory = f'{current_directory}/trained_models/{name}/'
@@ -185,11 +187,10 @@ def load_model(name, device='cuda:0', epoch=None):
    
     # build model
 
-    model, _ = build_model(config)
+    model, _ = build_model(config, dims=dims)
 
     checkpoint = torch.load(checkpoint_path, map_location={'cuda:0':device,'cuda:1':device,'cuda:2':device,'cuda:3':device})
 
-    
 
     model.to(device)
 
@@ -199,7 +200,7 @@ def load_model(name, device='cuda:0', epoch=None):
 
     return(model)
 
-def build_model(config):
+def build_model(config, dims=2):
     # ensure consistency of the config file, e.g. number of channels, ranges + enforce constraints
 
     # 1- Activation function (learnable spline)
@@ -224,8 +225,12 @@ def build_model(config):
     param_spline_scaling["x_max"] = config['noise_range'][1]
     param_spline_scaling["num_activations"] = config['multi_convolution']['num_channels'][-1]
 
-
-    model = WCvxConvNet(param_multi_conv=param_multi_conv, param_spline_activation=param_spline_activation, param_spline_scaling=param_spline_scaling, rho_wcvx=config["rho_wcvx"])
+    if dims == 2:
+        model = WCvxConvNet(param_multi_conv=param_multi_conv, param_spline_activation=param_spline_activation, param_spline_scaling=param_spline_scaling, rho_wcvx=config["rho_wcvx"])
+    elif dims == 3:
+        model = WCvxConvNet3d(param_multi_conv=param_multi_conv, param_spline_activation=param_spline_activation, param_spline_scaling=param_spline_scaling, rho_wcvx=config["rho_wcvx"])
+    else:
+        raise ValueError("Number of dimensions not valid.")
 
 
     return(model, config)

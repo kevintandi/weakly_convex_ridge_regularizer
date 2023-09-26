@@ -15,6 +15,9 @@ class H5PY(Dataset):
         super(Dataset, self).__init__()
         self.data_file = data_file
         self.dataset = None
+
+        print(data_file)
+        
         with h5py.File(self.data_file, 'r') as file:
             self.keys_list = list(file.keys())
             if shuffle:
